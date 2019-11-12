@@ -1,0 +1,50 @@
+#!/usr/bin/php
+<?php
+
+echo "\nJSON Filename: ";
+$filename = rtrim(fgets(STDIN));
+if (!file_exists($filename)) {
+  die("\nJSON file not found. Exiting...\n\n");
+}
+
+# Get JSON file
+$file = json_decode(file_get_contents($filename));
+if ($file == null) {
+	die("\nJSON file invalid. Exiting...\n\n");
+}
+$hits = $file->hits->hits;
+if ($hits == null) {
+	die("\nJSON structure invalid. Exiting...\n\n");
+}
+
+# Create CSV file
+$csv = pathinfo($filename)["filename"] . ".csv";
+$write = fopen($csv, "w");
+
+# CSV Header
+#$header = ["object", "path", "ip_address", "created_at", "user_agent"];
+#fputcsv($write, $header);
+
+# Create list from JSON object
+$list = [];
+foreach ($hits as $hit) {
+	$arr = [
+		$hit->_source->object,
+		$hit->_source->metadata->hostname,
+		$hit->_source->metadata->ip_address,
+		$hit->_source->metadata->created_at,
+		$hit->_source->metadata->user_agent,
+	];
+	$list[] = $arr;
+}
+
+# Write CSV file
+foreach ($list as $line) {
+  fputcsv($write, $line);
+}
+
+# Closing handler
+fclose($write);
+
+$count = count($list);
+exit("\nDone. " . $count . " lines written to " . $csv . ".\n\n");
